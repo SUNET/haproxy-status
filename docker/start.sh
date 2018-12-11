@@ -16,8 +16,8 @@ workers=${workers-1}
 worker_class=${worker_class-sync}
 worker_threads=${worker_threads-1}
 worker_timeout=${worker_timeout-30}
-runas_user=${runas_user-'haproxy_status'}
-runas_group=${runas_group-'haproxy_status'}
+runas_user=${runas_user-'root'}
+runas_group=${runas_group-'root'}
 
 chown -R ${runas_user}:${runas_group} "${log_dir}" "${state_dir}" || true
 test -d /backends && chown -R ${runas_user}:${runas_group} /backends || true
