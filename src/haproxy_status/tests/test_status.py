@@ -40,7 +40,7 @@ Test the API backend.
 import unittest
 from werkzeug.exceptions import NotFound
 
-import haproxystatus
+import haproxy_status
 
 TEST_CONFIG = {
     'DEBUG': True,
@@ -57,7 +57,7 @@ class AppTests(unittest.TestCase):
 
     def setUp(self, config=TEST_CONFIG):
         super(AppTests, self).setUp()
-        self.app = haproxystatus.app.init_app('unittest_app', config)
+        self.app = haproxy_status.app.init_app('unittest_app', config)
         self.client = self.app.test_client()
 
 

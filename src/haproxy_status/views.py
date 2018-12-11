@@ -9,7 +9,7 @@ from flask import Blueprint, current_app, request, abort, jsonify
 
 __author__ = 'ft'
 
-haproxystatus_views = Blueprint('haproxystatus', __name__, url_prefix='')
+haproxystatus_views = Blueprint('haproxy_status', __name__, url_prefix='')
 
 
 @haproxystatus_views.route('/status', methods=['GET'])

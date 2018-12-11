@@ -4,4 +4,4 @@ __organization__ = 'SUNET'
 __license__ = 'BSD'
 __authors__ = ['Fredrik Thulin']
 
-import haproxystatus.app
+import haproxy_status.app

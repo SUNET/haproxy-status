@@ -39,10 +39,10 @@ Check that haproxy backends are up, and report aggregate status.
 
 import sys
 
-import haproxystatus
+import haproxy_status
 
-progname = 'haproxystatus'
-app = haproxystatus.app.init_app(progname)
+progname = 'haproxy_status'
+app = haproxy_status.app.init_app(progname)
 
 if __name__ == '__main__':
     try:

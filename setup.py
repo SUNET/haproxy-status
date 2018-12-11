@@ -32,7 +32,7 @@ testing_extras = test_requires + [
 
 
 setup(
-    name='haproxystatus',
+    name='haproxy_status',
     version=version,
     description='SUNET haproxy status page',
     long_description=README + '\n\n' + CHANGES,
@@ -53,7 +53,7 @@ setup(
     extras_require={
         'testing': testing_extras,
     },
-    test_suite='haproxystatus',
+    test_suite='haproxy_status',
     entry_points={
         },
 )

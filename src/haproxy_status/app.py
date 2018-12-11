@@ -2,7 +2,7 @@
 
 from __future__ import absolute_import
 
-import haproxystatus
+import haproxy_status
 import logging
 
 from flask import Flask, request, has_request_context
@@ -47,7 +47,7 @@ def init_app(name, config=None):
     app.wsgi_app = ProxyFix(app.wsgi_app)
 
     # Load configuration
-    app.config.from_object('haproxystatus.settings.common')
+    app.config.from_object('haproxy_status.settings.common')
     app.config.from_envvar('haproxystatus_SETTINGS', silent=True)
 
     # Load optional init time settings
@@ -55,7 +55,7 @@ def init_app(name, config=None):
         app.config.update(config)
 
     # Register views. Import here to avoid a Flask circular dependency.
-    from haproxystatus.views import haproxystatus_views
+    from haproxy_status.views import haproxystatus_views
     app.register_blueprint(haproxystatus_views)
 
     app.mystate = MyState(app)
