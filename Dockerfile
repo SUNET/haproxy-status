@@ -12,7 +12,7 @@ ADD Dockerfile /Dockerfile
 
 # revision.txt is dynamically updated by the CI for every build,
 # to ensure build.sh is executed every time
-ADD revision.txt /revision.txt
+ADD docker/revision.txt /revision.txt
 
 ADD build.sh /build.sh
 RUN /build.sh
