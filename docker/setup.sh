@@ -8,6 +8,7 @@ set -x
 
 apt-get update
 apt-get -y dist-upgrade
+apt-get -y install socat
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
