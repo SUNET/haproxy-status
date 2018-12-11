@@ -14,7 +14,7 @@ ADD Dockerfile /Dockerfile
 # to ensure build.sh is executed every time
 ADD docker/revision.txt /revision.txt
 
-ADD build.sh /build.sh
+ADD docker/build.sh /build.sh
 RUN /build.sh
 
 WORKDIR /
