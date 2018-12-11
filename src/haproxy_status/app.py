@@ -48,15 +48,15 @@ def init_app(name, config=None):
 
     # Load configuration
     app.config.from_object('haproxy_status.settings.common')
-    app.config.from_envvar('haproxystatus_SETTINGS', silent=True)
+    app.config.from_envvar('haproxy_status_SETTINGS', silent=True)
 
     # Load optional init time settings
     if config is not None:
         app.config.update(config)
 
     # Register views. Import here to avoid a Flask circular dependency.
-    from haproxy_status.views import haproxystatus_views
-    app.register_blueprint(haproxystatus_views)
+    from haproxy_status.views import haproxy_status_views
+    app.register_blueprint(haproxy_status_views)
 
     app.mystate = MyState(app)
 

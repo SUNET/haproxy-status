@@ -9,13 +9,13 @@ from flask import Blueprint, current_app, request, abort, jsonify
 
 __author__ = 'ft'
 
-haproxystatus_views = Blueprint('haproxy_status', __name__, url_prefix='')
+haproxy_status_views = Blueprint('haproxy_status', __name__, url_prefix='')
 
 
-@haproxystatus_views.route('/status', methods=['GET'])
+@haproxy_status_views.route('/status', methods=['GET'])
 def status():
     return jsonify({'success': True})
 
-@haproxystatus_views.route('/ping', methods=['GET', 'POST'])
+@haproxy_status_views.route('/ping', methods=['GET', 'POST'])
 def ping():
     return 'pong\n'
