@@ -26,9 +26,10 @@ test -d /backends && chown -R ${runas_user}:${runas_group} /backends || true
 export PYTHONPATH=${PYTHONPATH-${project_dir}}
 
 extra_args=""
-if [ -d "${base_dir}/src/haproxy_status" ]; then
+if [ -d "${base_dir}/src/haproxy-status/src" ]; then
     # developer mode, restart on code changes
     extra_args="--reload"
+    export PYTHONPATH="${base_dir}/src/haproxy-status/src:${PYTHONPATH}"
 fi
 
 . ${base_dir}/bin/activate
