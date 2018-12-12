@@ -28,7 +28,7 @@ export PYTHONPATH=${PYTHONPATH-${project_dir}}
 extra_args=""
 if [ -d "${base_dir}/src/haproxy-status/src" ]; then
     # developer mode, restart on code changes
-    extra_args="--reload"
+    extra_args="--reload --log-level debug"
     export PYTHONPATH="${base_dir}/src/haproxy-status/src:${PYTHONPATH}"
 fi
 
@@ -45,6 +45,5 @@ exec start-stop-daemon --start -c ${runas_user}:${runas_group} --exec \
      --bind 0.0.0.0:8080 \
      --workers ${workers} --worker-class ${worker_class} \
      --threads ${worker_threads} --timeout ${worker_timeout} \
-     --access-logfile "${log_dir}/${haproxy_status_name}-access.log" \
      --error-logfile "${log_dir}/${haproxy_status_name}-error.log" \
      ${extra_args} haproxy_status.run:app
