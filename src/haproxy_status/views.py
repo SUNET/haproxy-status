@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import os
-import re
-
 from flask import Blueprint, current_app, request, abort, jsonify
+
+from haproxy_status.status import get_status
+from haproxy_status.util import time_to_str
 
 
 __author__ = 'ft'
@@ -14,7 +14,14 @@ haproxy_status_views = Blueprint('haproxy_status', __name__, url_prefix='')
 
 @haproxy_status_views.route('/status', methods=['GET'])
 def status():
-    return jsonify({'success': True})
+    if current_app.mystate.should_fetch_hap_status():
+        hap_status = get_status(current_app.config['STATS_URL'], current_app.logger)
+        if hap_status is None:
+            return jsonify({'status': 'FAIL'})
+
+        current_app.mystate.register_hap_status(hap_status)
+
+    return jsonify(current_app.mystate.get_status())
 
 @haproxy_status_views.route('/ping', methods=['GET', 'POST'])
 def ping():

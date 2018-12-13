@@ -1,2 +1,6 @@
-DEBUG = False
+DEBUG = True
 BACKEND_DIR = '/backends'
+STATS_URL = '/var/run/haproxy-control/stats'
+LOG_DOWN_INTERVAL = 60
+HEALTHY_BACKEND_UPTIME = 30
+FETCH_HAPROXY_STATUS_INTERVAL = 30
