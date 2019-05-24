@@ -167,7 +167,25 @@ def get_status(stats_url: str, logger: logging.Logger):
         return None
     # The first line is the legend, e.g.
     # # pxname,svname,qcur,qmax,scur,smax,slim,stot,bin,bout,dreq,...,status,...
-    ParsedLine = namedtuple('ParsedLine', lines[0][2:])
+    class ParsedLine(namedtuple('ParsedLine', lines[0][2:])):
+        """
+        Subclass a namedtuple to not clutter string representation with empty values from haproxy.
+        """
+
+        def __str__(self):
+            values = []
+            empty = []
+            for k, v in self._asdict().items():
+                if v and v != '0':
+                    values += ['{}={}'.format(k, v)]
+                else:
+                    empty += [k]
+            return '<{} non-empty values:\n  {}\nempty: {}>'.format(
+                self.__class__.__name__,
+                ',\n  '.join(sorted(values)),
+                ','.join(empty)
+            )
+
     # parse all the lines with real data
     res = {}
     for values in csv.reader(lines[1:]):
