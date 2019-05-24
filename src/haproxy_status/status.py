@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 import socket
 import csv
+import logging
 
 from collections import namedtuple
 
@@ -12,12 +11,26 @@ class HAProxyStatusError(Exception):
 
 
 class Site(object):
-    """ Wrapper object for parsed haproxy status data """
-    def __init__(self):
-        self._raw_fe = None
-        self._raw_be = None
-        self._raw_servers = []
-        self.name = None
+    """ Wrapper object for parsed haproxy status data.
+
+     name is haproxy pxname, which in särimner is ${sitename}__${group}
+     """
+    def __init__(self, name: str):
+        self._raw_fe = []  # type: List[Site]
+        self._raw_be = []  # type: List[Site]
+        self._raw_servers = []  # type: List[Site]
+        self.name = name
+        nameparts = name.split('__')
+        self.site_name = nameparts[0]
+        self.group = nameparts[1] if len(nameparts) > 1 else None
+
+    def __str__(self):
+        return '<Site {}: group={}, fe={}, be={}>'.format(self.site_name, self.group,
+                                                          len(self._raw_fe),
+                                                          len(self._raw_be))
+
+    def __repr__(self):
+        return '<{} at {:x}: {}>'.format(self.__class__.__name__, id(self), self.name)
 
     def add_parsed(self, parsed):
         """
@@ -25,12 +38,11 @@ class Site(object):
         :type parsed: namedtuple
         """
         if parsed.svname == 'FRONTEND':
-            self._raw_fe = parsed
+            self._raw_fe += [parsed]
         elif parsed.svname == 'BACKEND':
-            self._raw_be = parsed
+            self._raw_be += [parsed]
         else:
             self._raw_servers += [parsed]
-        if not self.name: self.name = parsed.pxname
 
     @property
     def frontend(self):
@@ -113,29 +125,30 @@ def haproxy_execute(cmd, stats_url, logger):
     return data
 
 
-def get_status(stats_url, logger):
+def get_status(stats_url: str, logger: logging.Logger):
     """
     haproxy 'show stat' returns _a lot_ of different metrics for each frontend and backend
-    in the system. Parse the returned CSV data and return the 'status' value for
-    frontends and backends, example:
+    in the system. Parse the returned CSV data and return a Site instance per haproxy pxname (site name + group).
 
-    {'app.example.org': Site(frontend='OPEN',
-                             backend='UP',
-                             groups={'default': {
-                                       'dash-fre-1.eduid.se_v4': 'UP',
-                                       'dash-tug-1.eduid.se_v4': 'UP'
-                                       'failpage': 'no check'},
-                                     'new': {
-                                        'apps-tug-1.eduid.se_v4': 'UP',
-                                        'apps-fre-1.eduid.se_v4': 'UP',
-                                        'failpage': 'no check'}}
-                            ),
+    Example:
+
+        [Site(frontend='OPEN',
+              backend='UP',
+              groups={'default': {
+                        'dash-fre-1.eduid.se_v4': 'UP',
+                        'dash-tug-1.eduid.se_v4': 'UP'
+                        'failpage': 'no check'},
+                      'new': {
+                        'apps-tug-1.eduid.se_v4': 'UP',
+                        'apps-fre-1.eduid.se_v4': 'UP',
+                        'failpage': 'no check'}}
+                      ),
     ...
     Example haproxy stats URL: 'http://127.0.0.1:9000/haproxy_stats;csv'
 
     :param stats_url: Path to haproxy socket, or a HTTP(S) URL to fetch from.
     :return: Status dict as detailed above
-    :rtype: dict
+    :rtype: list
     """
     data = haproxy_execute('show stat', stats_url, logger)
     if not data:
@@ -164,12 +177,10 @@ def get_status(stats_url, logger):
             logger.warning('Bad CSV data: {!r}: {!s}'.format(values, exc))
             continue
         #logger.debug('processing site {!r}'.format(this.pxname))
-        sitename = this.pxname.split('__')[0]
-
-        site = res.get(sitename, Site())
+        site = res.get(this.pxname, Site(name=this.pxname))
         site.add_parsed(this)
-        res[sitename] = site
+        res[this.pxname] = site
 
     #logger.debug('Parsed status: {}'.format(res))
 
-    return res.values()
+    return list(res.values())
