@@ -1,5 +1,5 @@
 builders:
-  - python
+  - script
 triggers:
   cron: "@weekly"
 slack:
