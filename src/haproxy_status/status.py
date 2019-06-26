@@ -2,25 +2,42 @@
 import socket
 import csv
 import logging
+from dataclasses import dataclass
 
-from collections import namedtuple
-
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional, cast, Dict
 
 
 class HAProxyStatusError(Exception):
     pass
 
 
-class Site(object):
-    """ Wrapper object for parsed haproxy status data.
+@dataclass
+class SiteInfo(object):
+    """
+    haproxy CSV record as a namedtuple.
 
-     name is haproxy pxname, which in särimner is ${site_name}__${group}
-     """
+    The dynamic NamedTuple ParsedLine is casted to this class to help typing.
+    Fields from the CSV not listed below are still present, but access to them
+    will of course produce typing errors.
+    """
+    pxname: str
+    svname: str
+    status: str
+    lastchg: str
+    # properties known to be used by other scripts, such as Särimner's haproxy-status
+    act: str
+
+
+class Site(object):
+    """
+    Wrapper object for parsed haproxy status data.
+
+    name is haproxy pxname, which in särimner is ${site_name}__${group}
+    """
     def __init__(self, name: str):
-        self._raw_fe = []  # type: List[NamedTuple]
-        self._raw_be = []  # type: List[NamedTuple]
-        self._raw_servers = []  # type: List[NamedTuple]
+        self._raw_fe = []  # type: List[SiteInfo]
+        self._raw_be = []  # type: List[SiteInfo]
+        self._raw_servers = []  # type: List[SiteInfo]
         self.name = name
         name_parts = name.split('__')
         self.site_name = name_parts[0]
@@ -31,43 +48,41 @@ class Site(object):
                                                           len(self._raw_fe),
                                                           len(self._raw_be))
 
-    def add_parsed(self, parsed: List[NamedTuple]):
+    def add_parsed(self, parsed: SiteInfo):
         """
         :param parsed: ParsedLine
         :type parsed: namedtuple
         """
-        if parsed.svname == 'FRONTEND':
+        if parsed.svname == 'FRONTEND':  # type: ignore
             self._raw_fe += [parsed]
-        elif parsed.svname == 'BACKEND':
+        elif parsed.svname == 'BACKEND':  # type: ignore
             self._raw_be += [parsed]
         else:
             self._raw_servers += [parsed]
 
     @property
-    def frontend(self) -> List[NamedTuple]:
+    def frontend(self) -> List[SiteInfo]:
         return self._raw_fe
 
     @property
-    def backend(self) -> List[NamedTuple]:
+    def backend(self) -> List[SiteInfo]:
         return self._raw_be
 
     @property
-    def servers(self) -> List[NamedTuple]:
+    def servers(self) -> List[SiteInfo]:
         return self._raw_servers
 
     @property
-    def backends_up(self) -> List[NamedTuple]:
+    def backends_up(self) -> List[SiteInfo]:
         """
         Return backends with status UP.
-        :rtype: list
         """
         return [x for x in self._raw_be if x.status == 'UP']
 
     @property
-    def backends_down(self) -> List[NamedTuple]:
+    def backends_down(self) -> List[SiteInfo]:
         """
         Return backends that are not UP.
-        :rtype: list
         """
         return [x for x in self._raw_be if x.status != 'UP']
 
@@ -88,7 +103,7 @@ class Site(object):
         return min(downtime)
 
 
-def haproxy_execute(cmd: str, stats_url: str, logger: logging.Logger) -> str:
+def haproxy_execute(cmd: str, stats_url: str, logger: logging.Logger) -> Optional[str]:
     if stats_url.startswith('http'):
         import requests
 
@@ -124,7 +139,7 @@ def haproxy_execute(cmd: str, stats_url: str, logger: logging.Logger) -> str:
     return data
 
 
-def get_status(stats_url: str, logger: logging.Logger):
+def get_status(stats_url: str, logger: logging.Logger) -> Optional[List[Site]]:
     """
     haproxy 'show stat' returns _a lot_ of different metrics for each frontend and backend
     in the system. Parse the returned CSV data and return a Site instance per haproxy pxname (site name + group).
@@ -146,15 +161,13 @@ def get_status(stats_url: str, logger: logging.Logger):
     Example haproxy stats URL: 'http://127.0.0.1:9000/haproxy_stats;csv'
 
     :param stats_url: Path to haproxy socket, or a HTTP(S) URL to fetch from.
-    :return: Status dict as detailed above
-    :rtype: list
     """
     data = haproxy_execute('show stat', stats_url, logger)
     if not data:
         return None
     if not data.startswith('# '):
         logger.error('Unknown status response from haproxy: {}'.format(data))
-    lines = []
+    lines = []  # type: List[str]
     for this in data.split('\n'):
         # remove extra comma at the end of all lines, and remove empty lines
         if this:
@@ -166,7 +179,14 @@ def get_status(stats_url: str, logger: logging.Logger):
         return None
     # The first line is the legend, e.g.
     # # pxname,svname,qcur,qmax,scur,smax,slim,stot,bin,bout,dreq,...,status,...
-    class ParsedLine(namedtuple('ParsedLine', lines[0][2:])):
+    fields = [(field_name, str,) for field_name in lines[0][2:].split(',')]
+    # Create a NamedTuple dynamically based on the legend we got from haproxy.
+    # Unfortunately, this is not accepted by mypy, so the result is casted to SiteInfo
+    # to not end up with countless type ignores.
+    #
+    # An alternative would be to use a dataclass instead, but then we would have to
+    # update it when haproxy changes and risk script breakage on updates of haproxy.
+    class ParsedLine(NamedTuple('ParsedLine', fields)):  # type: ignore
         """
         Subclass a namedtuple to not clutter string representation with empty values from haproxy.
         """
@@ -186,17 +206,18 @@ def get_status(stats_url: str, logger: logging.Logger):
             )
 
     # parse all the lines with real data
-    res = {}
+    res: Dict[str, Site] = {}
     for values in csv.reader(lines[1:]):
         try:
-            this = ParsedLine(*values)
+            _this = ParsedLine(*values)  # type: ignore
+            info = cast(SiteInfo, _this)
         except Exception as exc:
             logger.warning('Bad CSV data: {!r}: {!s}'.format(values, exc))
             continue
         #logger.debug('processing site {!r}'.format(this.pxname))
-        site = res.get(this.pxname, Site(name=this.pxname))
-        site.add_parsed(this)
-        res[this.pxname] = site
+        site = res.get(info.pxname, Site(name=info.pxname))
+        site.add_parsed(info)
+        res[info.pxname] = site
 
     #logger.debug('Parsed status: {}'.format(res))
 
