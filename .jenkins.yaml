@@ -9,6 +9,15 @@ clean_workspace: true
 publish_over_ssh:
   - pypi.sunet.se
 
+script:
+  - "python3.7 -m venv venv"
+  - ". venv/bin/activate"
+  - "pip install --upgrade setuptools pip wheel mypy"
+  - "pip install --index-url https://pypi.sunet.se -r test_requirements.txt"
+  - "nosetests"
+  - "mypy --ignore-missing-imports src/haproxy_status"
+  - "python setup.py sdist bdist_wheel --universal"
+
 extra_jobs:
   - name: haproxy-status-docker
     builders:

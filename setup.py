@@ -3,7 +3,7 @@ import os
 
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = 'SUNET frontend API'
+README = 'SUNET haproxy status'
 CHANGES = ''
 try:
     README = open(os.path.join(here, 'README.rst')).read()
@@ -14,22 +14,11 @@ try:
 except IOError:
     pass
 
-version = '0.0.1'
+version = '0.0.2'
 
-requires = [
-    'flask',
-    'simplejson >= 3.6.5',
-]
-
-
-test_requires = [
-]
-
-testing_extras = test_requires + [
-    'nose==1.2.1',
-    'coverage==3.6',
-]
-
+install_requires = [x for x in open(os.path.join(here, 'requirements.txt')).read().split('\n') if len(x) > 0]
+testing_extras = [x for x in open(os.path.join(here, 'test_requirements.txt')).read().split('\n')
+                  if len(x) > 0 and not x.startswith('-')]
 
 setup(
     name='haproxy_status',
