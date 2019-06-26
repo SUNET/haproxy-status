@@ -29,9 +29,6 @@ class Site(object):
                                                           len(self._raw_fe),
                                                           len(self._raw_be))
 
-    def __repr__(self):
-        return '<{} at {:x}: {}>'.format(self.__class__.__name__, id(self), self.name)
-
     def add_parsed(self, parsed):
         """
         :param parsed: ParsedLine
