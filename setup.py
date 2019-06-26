@@ -37,8 +37,7 @@ setup(
     package_dir = {'': 'src'},
     include_package_data=True,
     zip_safe=False,
-    install_requires=requires,
-    tests_require=test_requires,
+    install_requires=install_requires,
     extras_require={
         'testing': testing_extras,
     },
