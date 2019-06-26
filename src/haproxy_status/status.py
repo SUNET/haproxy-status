@@ -5,6 +5,8 @@ import logging
 
 from collections import namedtuple
 
+from typing import List, NamedTuple
+
 
 class HAProxyStatusError(Exception):
     pass
@@ -13,23 +15,23 @@ class HAProxyStatusError(Exception):
 class Site(object):
     """ Wrapper object for parsed haproxy status data.
 
-     name is haproxy pxname, which in särimner is ${sitename}__${group}
+     name is haproxy pxname, which in särimner is ${site_name}__${group}
      """
     def __init__(self, name: str):
-        self._raw_fe = []  # type: List[Site]
-        self._raw_be = []  # type: List[Site]
-        self._raw_servers = []  # type: List[Site]
+        self._raw_fe = []  # type: List[NamedTuple]
+        self._raw_be = []  # type: List[NamedTuple]
+        self._raw_servers = []  # type: List[NamedTuple]
         self.name = name
-        nameparts = name.split('__')
-        self.site_name = nameparts[0]
-        self.group = nameparts[1] if len(nameparts) > 1 else None
+        name_parts = name.split('__')
+        self.site_name = name_parts[0]
+        self.group = name_parts[1] if len(name_parts) > 1 else None
 
     def __str__(self):
         return '<Site {}: group={}, fe={}, be={}>'.format(self.site_name, self.group,
                                                           len(self._raw_fe),
                                                           len(self._raw_be))
 
-    def add_parsed(self, parsed):
+    def add_parsed(self, parsed: List[NamedTuple]):
         """
         :param parsed: ParsedLine
         :type parsed: namedtuple
@@ -42,19 +44,19 @@ class Site(object):
             self._raw_servers += [parsed]
 
     @property
-    def frontend(self):
+    def frontend(self) -> List[NamedTuple]:
         return self._raw_fe
 
     @property
-    def backend(self):
+    def backend(self) -> List[NamedTuple]:
         return self._raw_be
 
     @property
-    def servers(self):
+    def servers(self) -> List[NamedTuple]:
         return self._raw_servers
 
     @property
-    def backends_up(self):
+    def backends_up(self) -> List[NamedTuple]:
         """
         Return backends with status UP.
         :rtype: list
@@ -62,7 +64,7 @@ class Site(object):
         return [x for x in self._raw_be if x.status == 'UP']
 
     @property
-    def backends_down(self):
+    def backends_down(self) -> List[NamedTuple]:
         """
         Return backends that are not UP.
         :rtype: list
@@ -70,7 +72,7 @@ class Site(object):
         return [x for x in self._raw_be if x.status != 'UP']
 
     @property
-    def backend_uptime_min(self):
+    def backend_uptime_min(self) -> int:
         """ Return the shortest backend uptime
             aka. how long all backends many seconds ago the last backend went down
         """
@@ -78,7 +80,7 @@ class Site(object):
         return min(downtime)
 
     @property
-    def backend_downtime_min(self):
+    def backend_downtime_min(self) -> int:
         """ Return the shortest backend downtime
             aka. how many seconds ago the last backend went down
         """
@@ -86,7 +88,7 @@ class Site(object):
         return min(downtime)
 
 
-def haproxy_execute(cmd, stats_url, logger):
+def haproxy_execute(cmd: str, stats_url: str, logger: logging.Logger) -> str:
     if stats_url.startswith('http'):
         import requests
 
