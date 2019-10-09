@@ -1,4 +1,4 @@
-DEBUG = False
+LOG_LEVEL = 'INFO'
 BACKEND_DIR = '/backends'
 STATS_URL = '/var/run/haproxy-control/stats'
 LOG_DOWN_INTERVAL = 180

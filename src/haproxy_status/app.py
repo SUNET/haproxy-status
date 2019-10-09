@@ -164,9 +164,10 @@ def init_app(name, config=None):
     app.register_blueprint(haproxy_status_views)
 
     # set up logging
-    custom_format = '%(asctime)s %(remote_addr)s - %(levelname)s %(name)s "%(path)s" "%(endpoint)s" ; %(message)s'
+    custom_format = '%(asctime)s - %(levelname)s ; %(message)s'
     for handler in app.logger.handlers:
         handler.setFormatter(CustomFormatter(fmt=custom_format))
+    app.logger.setLevel(app.config['LOG_LEVEL'])
 
     app.mystate = MyState()
 
