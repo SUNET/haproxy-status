@@ -5,10 +5,12 @@ from __future__ import absolute_import
 import logging
 import random
 import time
+from typing import List
 
 from flask import Flask, current_app, has_request_context, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from haproxy_status.status import Site, SiteInfo
 from haproxy_status.util import time_to_str
 
 __author__ = 'ft'
@@ -22,14 +24,14 @@ class MyState(object):
         self._next_fetch_hap_status = 0
         self._last_status = ''
 
-    def register_hap_status(self, hap_status):
+    def register_hap_status(self, hap_status: List[Site]):
         self._update_time = int(time.time())
 
         for this in hap_status:
             for be in this.servers:
                 self._register_server_state(this.name, be)
-            if this.backend:
-                self._register_server_state(this.name, this.backend)
+            for be in this.backend:
+                self._register_server_state(this.name, be)
 
         current_app.logger.debug('State: {!r}'.format(self._hap_status))
 
@@ -76,7 +78,7 @@ class MyState(object):
 
         return res
 
-    def should_fetch_hap_status(self):
+    def should_fetch_hap_status(self) -> bool:
         if time.time() >= self._next_fetch_hap_status:
             # move the next-fetch timestamp forward in time, and add a tiny bit of fuzzing
             self._next_fetch_hap_status = time.time() +\
@@ -85,12 +87,10 @@ class MyState(object):
             return True
         return False
 
-    def _register_server_state(self, name, server):
+    def _register_server_state(self, name: str, server: SiteInfo) -> None:
         """
         :param name: Site name
-        :param server: ParsedLine
-        :type server: namedtuple
-        :return:
+        :param server: Parsed site info
         """
         srv_name = server.svname
         srv_status = server.status
