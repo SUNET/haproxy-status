@@ -22,7 +22,7 @@ def status():
 
     res = current_app.mystate.get_status()
     current_app.logger.debug('Response: {}'.format(res))
-    return jsonify(current_app.mystate.get_status())
+    return jsonify(res)
 
 @haproxy_status_views.route('/ping', methods=['GET', 'POST'])
 def ping():
