@@ -21,4 +21,6 @@ WORKDIR /
 
 EXPOSE 8080
 
+HEALTHCHECK --interval=7s CMD grep -q ^STATUS_UP /dev/shm/haproxy-status.txt
+
 CMD ["bash", "/start.sh"]
