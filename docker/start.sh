@@ -46,4 +46,5 @@ exec start-stop-daemon --start -c ${runas_user}:${runas_group} --exec \
      --workers ${workers} --worker-class ${worker_class} \
      --threads ${worker_threads} --timeout ${worker_timeout} \
      --error-logfile "${log_dir}/${haproxy_status_name}-error.log" \
+     --capture-output \
      ${extra_args} haproxy_status.run:app
