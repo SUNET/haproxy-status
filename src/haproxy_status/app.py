@@ -20,6 +20,7 @@ class MyState(object):
         self._update_time = None
         self._hap_status = {}
         self._next_fetch_hap_status = 0
+        self._last_status = ''
 
     def register_hap_status(self, hap_status):
         self._update_time = int(time.time())
@@ -63,6 +64,15 @@ class MyState(object):
         elif count:
             res['status'] = 'STATUS_UP'
             res['reason'] = '{} backend{} UP'.format(count, plural)
+
+        _status_str = '{} {}'.format(res['status'], res['reason'])
+        if _status_str != self._last_status:
+            self._last_status = _status_str
+            current_app.logger.info('Status changed to {}'.format(_status_str))
+            if current_app.config['STATUS_OUTPUT_FILENAME']:
+                # export to docker health check
+                with open(current_app.config['STATUS_OUTPUT_FILENAME'], 'w') as fd:
+                    fd.write('{}\n'.format(_status_str))
 
         return res
 
