@@ -67,14 +67,13 @@ class MyState(object):
             res['status'] = 'STATUS_UP'
             res['reason'] = '{} backend{} UP'.format(count, plural)
 
-        _status_str = '{} {}'.format(res['status'], res['reason'])
-        if _status_str != self._last_status:
-            self._last_status = _status_str
-            current_app.logger.info('Status changed to {}'.format(_status_str))
+        if res['status'] != self._last_status:
+            self._last_status = res['status']
+            current_app.logger.info('Status changed to {} {}'.format(res['status'], res['reason']))
             if current_app.config['STATUS_OUTPUT_FILENAME']:
                 # export to docker health check
                 with open(current_app.config['STATUS_OUTPUT_FILENAME'], 'w') as fd:
-                    fd.write('{}\n'.format(_status_str))
+                    fd.write('{} {}\n'.format(res['status'], res['reason']))
 
         return res
 
