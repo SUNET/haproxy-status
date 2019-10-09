@@ -2,14 +2,13 @@
 
 from __future__ import absolute_import
 
-import time
-import random
 import logging
+import random
+import time
 
-from flask import Flask, request, has_request_context, current_app
-from werkzeug.contrib.fixers import ProxyFix
+from flask import Flask, current_app, has_request_context, request
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-import haproxy_status
 from haproxy_status.util import time_to_str
 
 __author__ = 'ft'
@@ -157,7 +156,7 @@ def init_app(name, config=None):
     # set up logging
     custom_format = '%(asctime)s %(remote_addr)s - %(levelname)s %(name)s "%(path)s" "%(endpoint)s" ; %(message)s'
     for handler in app.logger.handlers:
-        handler.setFormatter(CustomFormatter(fmt = custom_format))
+        handler.setFormatter(CustomFormatter(fmt=custom_format))
 
     app.mystate = MyState()
 

@@ -10,3 +10,4 @@ coverage.xml
 nosetests.xml
 env/
 .idea/
+.mypy_cache/
