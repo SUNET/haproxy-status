@@ -26,6 +26,9 @@ class SiteInfo(object):
     lastchg: str
     # properties known to be used by other scripts, such as Särimner's haproxy-status
     act: str
+    addr: str
+    check_desc: str
+    last_chk: str
 
 
 class Site(object):
@@ -122,6 +125,9 @@ def haproxy_execute(cmd: str, stats_url: str, logger: logging.Logger) -> Optiona
             client.connect(socket_fn)
             cmd = cmd + '\n'
             client.send(cmd.encode('utf-8'))
+        except ConnectionRefusedError:
+            logger.info('haproxy refused the connection on socket {}, maybe it is not running?'.format(socket_fn))
+            return None
         except Exception as exc:
             logger.error('Failed sending command {!r} to socket {}: {}'.format(cmd, socket_fn, exc))
             logger.exception(exc)
