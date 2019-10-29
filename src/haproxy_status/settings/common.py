@@ -7,3 +7,5 @@ FETCH_HAPROXY_STATUS_INTERVAL = 15
 # to avoid flapping if a service really is restarting (also account for random fuzzing)
 HEALTHY_BACKEND_UPTIME = FETCH_HAPROXY_STATUS_INTERVAL * 2 + 2
 STATUS_OUTPUT_FILENAME = '/dev/shm/haproxy-status.txt'
+SIGNAL_DIRECTORY = '/var/haproxy-status'
+SERVICE_NAME = None

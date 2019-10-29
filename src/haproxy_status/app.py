@@ -3,10 +3,12 @@
 from __future__ import absolute_import
 
 import logging
+import os
 import random
 import time
-from typing import List
+from typing import List, Optional, Dict
 
+import yaml
 from flask import Flask, current_app, has_request_context, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -34,6 +36,36 @@ class MyState(object):
                 self._register_server_state(this.name, be)
 
         current_app.logger.debug('State: {!r}'.format(self._hap_status))
+
+    def is_admin_down(self) -> bool:
+        """
+        Check for a file signalling that we should set the status to ADMIN_DOWN.
+
+        Built in a way to support further enhancements such as automatic expiry
+        etc.
+        """
+        def load_control_file(fn: str) -> Optional[Dict]:
+            path = os.path.join(current_app.config['SIGNAL_DIRECTORY'], fn)
+            try:
+                with open(path, 'r') as fd:
+                    try:
+                        return yaml.safe_load(fd)
+                    except yaml.YAMLError:
+                        # file exists, so err on the safe side and say ADMIN DOWN
+                        return {}
+            except FileNotFoundError:
+                return None
+
+        if current_app.config['SERVICE_NAME']:
+            data = load_control_file(current_app.config['SERVICE_NAME'])
+            if data is not None:
+                return True
+
+        data = load_control_file('common')
+        if data is not None:
+            return True
+
+        return False
 
     def get_status(self):
         age = time.time() - self._update_time
@@ -66,6 +98,9 @@ class MyState(object):
         elif count:
             res['status'] = 'STATUS_UP'
             res['reason'] = '{} backend{} UP'.format(count, plural)
+
+        if self.is_admin_down():
+            res['status'] = 'STATUS_ADMIN_DOWN'
 
         if res['status'] != self._last_status:
             self._last_status = res['status']
@@ -157,6 +192,11 @@ def init_app(name, config=None):
     # Load optional init time settings
     if config is not None:
         app.config.update(config)
+
+    # load SERVICE_NAME from environment variable 'haproxy_status_name' to
+    # make it easy to set it from docker compose files.
+    if 'SERVICE_NAME' in os.environ:
+        app.config.update({'SERVICE_NAME': os.environ['SERVICE_NAME']})
 
     # Register views. Import here to avoid a Flask circular dependency.
     from haproxy_status.views import haproxy_status_views
