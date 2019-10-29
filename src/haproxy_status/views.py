@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from flask import Blueprint, current_app, jsonify
+from flask import Blueprint, current_app, jsonify, abort
 
 from haproxy_status.status import get_status
 
@@ -22,6 +22,10 @@ def status():
 
     res = current_app.mystate.get_status()
     current_app.logger.debug('Response: {}'.format(res))
+
+    if res['status'] == 'STATUS_ADMIN_DOWN' and current_app.config['RETURN_404_ON_ADMIN_DOWN']:
+        abort(404)
+
     return jsonify(res)
 
 @haproxy_status_views.route('/ping', methods=['GET', 'POST'])
