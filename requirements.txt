@@ -1,2 +1,3 @@
 flask
 simplejson>=3.6.5
+PyYAML
