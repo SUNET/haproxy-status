@@ -49,7 +49,10 @@ class MyState(object):
             try:
                 with open(path, 'r') as fd:
                     try:
-                        return yaml.safe_load(fd)
+                        res = yaml.safe_load(fd)
+                        if res is None:
+                            return {}
+                        return res
                     except yaml.YAMLError:
                         # file exists, so err on the safe side and say ADMIN DOWN
                         return {}
