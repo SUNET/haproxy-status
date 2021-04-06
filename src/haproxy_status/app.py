@@ -3,7 +3,7 @@ import logging
 import os
 import random
 import time
-from typing import List, Optional, Dict
+from typing import Any, List, Mapping, Optional, Dict
 
 import yaml
 from flask import Flask, current_app, has_request_context, request
@@ -17,7 +17,9 @@ __author__ = 'ft'
 
 class MyState(object):
 
-    def __init__(self):
+    def __init__(self, config: Mapping[str, Any], logger: logging.Logger):
+        self.config = config
+        self.logger = logger
         self._update_time = None
         self._hap_status = {}
         self._next_fetch_hap_status = 0
@@ -32,7 +34,7 @@ class MyState(object):
             for be in this.backend:
                 self._register_server_state(this.name, be)
 
-        current_app.logger.debug('State: {!r}'.format(self._hap_status))
+        self.logger.debug('State: {!r}'.format(self._hap_status))
 
     def is_admin_down(self) -> bool:
         """
@@ -42,7 +44,7 @@ class MyState(object):
         etc.
         """
         def load_control_file(fn: str) -> Optional[Dict]:
-            path = os.path.join(current_app.config['SIGNAL_DIRECTORY'], fn)
+            path = os.path.join(self.config['SIGNAL_DIRECTORY'], fn)
             try:
                 with open(path, 'r') as fd:
                     try:
@@ -57,7 +59,7 @@ class MyState(object):
                 return None
 
         if current_app.config['SERVICE_NAME']:
-            data = load_control_file(current_app.config['SERVICE_NAME'])
+            data = load_control_file(self.config['SERVICE_NAME'])
             if data is not None:
                 return True
 
@@ -73,7 +75,7 @@ class MyState(object):
             age = time.time() - self._update_time
         res = {'status': 'STATUS_UNKNOWN',
                'reason': 'No backend data received from haproxy',
-               'ttl': int(current_app.config['FETCH_HAPROXY_STATUS_INTERVAL'] - age),
+               'ttl': int(self.config['FETCH_HAPROXY_STATUS_INTERVAL'] - age),
                }
         count = 0
         down_count = 0
@@ -86,7 +88,7 @@ class MyState(object):
             status = be['status']
             if status == 'UP':
                 uptime = int(time.time()) - be['change_ts']
-                if uptime >= current_app.config['HEALTHY_BACKEND_UPTIME']:
+                if uptime >= self.config['HEALTHY_BACKEND_UPTIME']:
                     continue
                 status = '(RE)STARTING'
             down_count += 1
@@ -106,10 +108,10 @@ class MyState(object):
 
         if res['status'] != self._last_status:
             self._last_status = res['status']
-            current_app.logger.info('Status changed to {} {}'.format(res['status'], res['reason']))
-            if current_app.config['STATUS_OUTPUT_FILENAME']:
+            self.logger.info('Status changed to {} {}'.format(res['status'], res['reason']))
+            if self.config['STATUS_OUTPUT_FILENAME']:
                 # export to docker health check
-                with open(current_app.config['STATUS_OUTPUT_FILENAME'], 'w') as fd:
+                with open(self.config['STATUS_OUTPUT_FILENAME'], 'w') as fd:
                     fd.write('{} {}\n'.format(res['status'], res['reason']))
 
         return res
@@ -118,7 +120,7 @@ class MyState(object):
         if time.time() >= self._next_fetch_hap_status:
             # move the next-fetch timestamp forward in time, and add a tiny bit of fuzzing
             self._next_fetch_hap_status = time.time() +\
-                                          current_app.config['FETCH_HAPROXY_STATUS_INTERVAL'] +\
+                                          self.config['FETCH_HAPROXY_STATUS_INTERVAL'] +\
                                           random.random()
             return True
         return False
@@ -138,24 +140,24 @@ class MyState(object):
         if old_status != srv_status:
             if srv_name != 'BACKEND':
                 if old_status is None:
-                    current_app.logger.info('Backend {} server {} initial status is {}'.format(
+                    self.logger.info('Backend {} server {} initial status is {}'.format(
                         name, srv_name, srv_status))
                 else:
-                    current_app.logger.info('Backend {} server {} changed status to {}'.format(
+                    self.logger.info('Backend {} server {} changed status to {}'.format(
                         name, srv_name, srv_status))
                 # Debug log all the info we got on server changes. We once saw haproxy end up with
                 # the wrong IP for a backend and had no way to know when or how it changed.
-                current_app.logger.debug('All server data: {}'.format(server))
+                self.logger.debug('All server data: {}'.format(server))
                 if srv_status == 'DOWN':
                     self._hap_status[name][srv_name]['next_log_down'] = int(time.time()) + \
-                                                                        current_app.config['LOG_DOWN_INTERVAL']
+                                                                        self.config['LOG_DOWN_INTERVAL']
             self._hap_status[name][srv_name]['status'] = srv_status
             self._hap_status[name][srv_name]['change_ts'] = int(time.time()) - int(server.lastchg)
         else:
             if srv_name != 'BACKEND' and srv_status == 'DOWN' and \
                     int(time.time()) >= self._hap_status[name][srv_name]['next_log_down']:
                 downtime = time_to_str(int(time.time() - self._hap_status[name][srv_name]['change_ts']))
-                current_app.logger.info('Site {} server {} is still DOWN ({})'.format(
+                self.logger.info('Site {} server {} is still DOWN ({})'.format(
                     name, srv_name, downtime))
 
 
@@ -210,7 +212,7 @@ def init_app(name, config=None):
         handler.setFormatter(CustomFormatter(fmt=custom_format))
     app.logger.setLevel(app.config['LOG_LEVEL'])
 
-    app.mystate = MyState()
+    app.mystate = MyState(app.config, app.logger)
 
     # Get status to trigger writing the STATUS_OUTPUT_FILENAME file
     _status = app.mystate.get_status()
