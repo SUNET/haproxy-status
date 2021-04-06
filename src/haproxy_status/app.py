@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-
 import logging
 import os
 import random
@@ -71,7 +68,9 @@ class MyState(object):
         return False
 
     def get_status(self):
-        age = time.time() - self._update_time
+        age = 0
+        if self._update_time is not None:
+            age = time.time() - self._update_time
         res = {'status': 'STATUS_UNKNOWN',
                'reason': 'No backend data received from haproxy',
                'ttl': int(current_app.config['FETCH_HAPROXY_STATUS_INTERVAL'] - age),
