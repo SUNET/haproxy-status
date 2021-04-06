@@ -213,5 +213,8 @@ def init_app(name, config=None):
 
     app.mystate = MyState()
 
-    app.logger.info('Application {!r} initialized'.format(name))
+    # Get status to trigger writing the STATUS_OUTPUT_FILENAME file
+    _status = app.mystate.get_status()
+
+    app.logger.info(f'Application {name} initialised with initial status: {_status}')
     return app
