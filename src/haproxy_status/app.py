@@ -3,10 +3,10 @@ import logging
 import os
 import random
 import time
-from typing import Any, List, Mapping, Optional, Dict
+from typing import Any, Dict, List, Mapping, Optional
 
 import yaml
-from flask import Flask, current_app, has_request_context, request
+from flask import Flask, has_request_context, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from haproxy_status.status import Site, SiteInfo
@@ -58,7 +58,7 @@ class MyState(object):
             except FileNotFoundError:
                 return None
 
-        if current_app.config['SERVICE_NAME']:
+        if self.config['SERVICE_NAME']:
             data = load_control_file(self.config['SERVICE_NAME'])
             if data is not None:
                 return True
