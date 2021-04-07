@@ -38,9 +38,9 @@ class Site(object):
     name is haproxy pxname, which in särimner is ${site_name}__${group}
     """
     def __init__(self, name: str):
-        self._raw_fe = []  # type: List[SiteInfo]
-        self._raw_be = []  # type: List[SiteInfo]
-        self._raw_servers = []  # type: List[SiteInfo]
+        self._raw_fe: List[SiteInfo] = []
+        self._raw_be: List[SiteInfo] = []
+        self._raw_servers: List[SiteInfo] = []
         self.name = name
         name_parts = name.split('__')
         self.site_name = name_parts[0]

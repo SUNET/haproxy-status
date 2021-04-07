@@ -20,8 +20,8 @@ class MyState(object):
     def __init__(self, config: Mapping[str, Any], logger: logging.Logger):
         self.config = config
         self.logger = logger
-        self._update_time = None
-        self._hap_status = {}
+        self._update_time: Optional[int] = None
+        self._hap_status: Dict[str, Dict[str, Any]] = {}
         self._next_fetch_hap_status = 0
         self._last_status = ''
 
