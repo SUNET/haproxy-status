@@ -96,7 +96,7 @@ class MyState(object):
             downtime = time_to_str(int(time.time()) - be['change_ts'])
             msg += ['{} is {} ({})'.format(this, status, downtime)]
 
-        plural = '' if count is 1 else 's'
+        plural = '' if count == 1 else 's'
         if down_count:
             res['status'] = 'STATUS_DOWN'
             res['reason'] = '{}/{} backend{} not UP: {}'.format(down_count, count, plural, ', '.join(msg))

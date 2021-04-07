@@ -6,7 +6,7 @@ reformat:
 	black --line-length 120 --target-version py37 --skip-string-normalization $(SOURCE)
 
 test:
-	pytest
+	PYTHONPATH=$(SOURCE) pytest
 
 typecheck:
 	@echo "Type checking this project currently does not work:"
