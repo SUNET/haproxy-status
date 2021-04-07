@@ -16,7 +16,6 @@ __author__ = 'ft'
 
 
 class MyState(object):
-
     def __init__(self, config: Mapping[str, Any], logger: logging.Logger):
         self.config = config
         self.logger = logger
@@ -43,6 +42,7 @@ class MyState(object):
         Built in a way to support further enhancements such as automatic expiry
         etc.
         """
+
         def load_control_file(fn: str) -> Optional[Dict]:
             path = os.path.join(self.config['SIGNAL_DIRECTORY'], fn)
             try:
@@ -73,10 +73,11 @@ class MyState(object):
         age = 0
         if self._update_time is not None:
             age = time.time() - self._update_time
-        res = {'status': 'STATUS_UNKNOWN',
-               'reason': 'No backend data received from haproxy',
-               'ttl': int(self.config['FETCH_HAPROXY_STATUS_INTERVAL'] - age),
-               }
+        res = {
+            'status': 'STATUS_UNKNOWN',
+            'reason': 'No backend data received from haproxy',
+            'ttl': int(self.config['FETCH_HAPROXY_STATUS_INTERVAL'] - age),
+        }
         count = 0
         down_count = 0
         msg = []
@@ -119,9 +120,7 @@ class MyState(object):
     def should_fetch_hap_status(self) -> bool:
         if time.time() >= self._next_fetch_hap_status:
             # move the next-fetch timestamp forward in time, and add a tiny bit of fuzzing
-            self._next_fetch_hap_status = time.time() +\
-                                          self.config['FETCH_HAPROXY_STATUS_INTERVAL'] +\
-                                          random.random()
+            self._next_fetch_hap_status = time.time() + self.config['FETCH_HAPROXY_STATUS_INTERVAL'] + random.random()
             return True
         return False
 
@@ -140,25 +139,26 @@ class MyState(object):
         if old_status != srv_status:
             if srv_name != 'BACKEND':
                 if old_status is None:
-                    self.logger.info('Backend {} server {} initial status is {}'.format(
-                        name, srv_name, srv_status))
+                    self.logger.info('Backend {} server {} initial status is {}'.format(name, srv_name, srv_status))
                 else:
-                    self.logger.info('Backend {} server {} changed status to {}'.format(
-                        name, srv_name, srv_status))
+                    self.logger.info('Backend {} server {} changed status to {}'.format(name, srv_name, srv_status))
                 # Debug log all the info we got on server changes. We once saw haproxy end up with
                 # the wrong IP for a backend and had no way to know when or how it changed.
                 self.logger.debug('All server data: {}'.format(server))
                 if srv_status == 'DOWN':
-                    self._hap_status[name][srv_name]['next_log_down'] = int(time.time()) + \
-                                                                        self.config['LOG_DOWN_INTERVAL']
+                    self._hap_status[name][srv_name]['next_log_down'] = (
+                        int(time.time()) + self.config['LOG_DOWN_INTERVAL']
+                    )
             self._hap_status[name][srv_name]['status'] = srv_status
             self._hap_status[name][srv_name]['change_ts'] = int(time.time()) - int(server.lastchg)
         else:
-            if srv_name != 'BACKEND' and srv_status == 'DOWN' and \
-                    int(time.time()) >= self._hap_status[name][srv_name]['next_log_down']:
+            if (
+                srv_name != 'BACKEND'
+                and srv_status == 'DOWN'
+                and int(time.time()) >= self._hap_status[name][srv_name]['next_log_down']
+            ):
                 downtime = time_to_str(int(time.time() - self._hap_status[name][srv_name]['change_ts']))
-                self.logger.info('Site {} server {} is still DOWN ({})'.format(
-                    name, srv_name, downtime))
+                self.logger.info('Site {} server {} is still DOWN ({})'.format(name, srv_name, downtime))
 
 
 # from http://stackoverflow.com/questions/27775026/provide-extra-information-to-flasks-app-logger
@@ -204,6 +204,7 @@ def init_app(name, config=None):
 
     # Register views. Import here to avoid a Flask circular dependency.
     from haproxy_status.views import haproxy_status_views
+
     app.register_blueprint(haproxy_status_views)
 
     # set up logging

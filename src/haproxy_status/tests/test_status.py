@@ -38,6 +38,7 @@ Test the API backend.
 """
 
 import unittest
+
 from werkzeug.exceptions import NotFound
 
 import haproxy_status
@@ -62,7 +63,6 @@ class AppTests(unittest.TestCase):
 
 
 class BaseAppTests(AppTests):
-
     def test_bad_request(self):
         """
         Verify bad requests are rejected

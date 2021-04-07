@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-import socket
 import csv
 import logging
+import socket
 from dataclasses import dataclass
-
-from typing import List, NamedTuple, Optional, cast, Dict
+from typing import Dict, List, NamedTuple, Optional, cast
 
 
 class HAProxyStatusError(Exception):
@@ -20,6 +19,7 @@ class SiteInfo(object):
     Fields from the CSV not listed below are still present, but access to them
     will of course produce typing errors.
     """
+
     pxname: str
     svname: str
     status: str
@@ -37,6 +37,7 @@ class Site(object):
 
     name is haproxy pxname, which in särimner is ${site_name}__${group}
     """
+
     def __init__(self, name: str):
         self._raw_fe: List[SiteInfo] = []
         self._raw_be: List[SiteInfo] = []
@@ -47,9 +48,9 @@ class Site(object):
         self.group = name_parts[1] if len(name_parts) > 1 else None
 
     def __str__(self):
-        return '<Site {}: group={}, fe={}, be={}>'.format(self.site_name, self.group,
-                                                          len(self._raw_fe),
-                                                          len(self._raw_be))
+        return '<Site {}: group={}, fe={}, be={}>'.format(
+            self.site_name, self.group, len(self._raw_fe), len(self._raw_be)
+        )
 
     def add_parsed(self, parsed: SiteInfo):
         """
@@ -118,7 +119,7 @@ def haproxy_execute(cmd: str, stats_url: str, logger: logging.Logger) -> Optiona
     else:
         socket_fn = stats_url
         if socket_fn.startswith('file://'):
-            socket_fn = socket_fn[len('file://'):]
+            socket_fn = socket_fn[len('file://') :]
         logger.debug('opening AF_UNIX socket {} for command "{}"'.format(socket_fn, cmd))
         try:
             client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -140,7 +141,7 @@ def haproxy_execute(cmd: str, stats_url: str, logger: logging.Logger) -> Optiona
                 break
             data += this.decode('utf-8')
 
-    #logger.debug('haproxy result: {}'.format(data))
+    # logger.debug('haproxy result: {}'.format(data))
     logger.debug('haproxy command {!r} result: {} bytes'.format(cmd, len(data)))
     return data
 
@@ -206,9 +207,7 @@ def get_status(stats_url: str, logger: logging.Logger) -> Optional[List[Site]]:
                 else:
                     empty += [k]
             return '<{} non-empty values:\n  {}\nempty: {}>'.format(
-                self.__class__.__name__,
-                ',\n  '.join(sorted(values)),
-                ','.join(empty)
+                self.__class__.__name__, ',\n  '.join(sorted(values)), ','.join(empty)
             )
 
     # parse all the lines with real data
@@ -220,11 +219,11 @@ def get_status(stats_url: str, logger: logging.Logger) -> Optional[List[Site]]:
         except Exception as exc:
             logger.warning('Bad CSV data: {!r}: {!s}'.format(values, exc))
             continue
-        #logger.debug('processing site {!r}'.format(this.pxname))
+        # logger.debug('processing site {!r}'.format(this.pxname))
         site = res.get(info.pxname, Site(name=info.pxname))
         site.add_parsed(info)
         res[info.pxname] = site
 
-    #logger.debug('Parsed status: {}'.format(res))
+    # logger.debug('Parsed status: {}'.format(res))
 
     return list(res.values())
