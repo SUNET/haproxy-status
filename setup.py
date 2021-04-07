@@ -50,7 +50,7 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     extras_require={
-        'testing': testing_extras,
+        'testing': test_requires,
     },
     test_suite='haproxy_status',
     entry_points={
