@@ -216,6 +216,7 @@ def init_app(name, config=None):
     app.mystate = MyState(app.config, app.logger)
 
     # Get status to trigger writing the STATUS_OUTPUT_FILENAME file
+    # TODO: might need an internal mechanism to trigger status updating if nobody accesses the status endpoint
     _status = app.mystate.get_status()
 
     app.logger.info(f'Application {name} initialised with initial status: {_status}')
