@@ -10,7 +10,6 @@ base_dir=${base_dir-"/opt/eduid"}
 project_dir=${project_dir-"${base_dir}/${haproxy_status_name}"}
 app_dir=${app_dir-"${project_dir}/${app_name}"}
 # These *can* be set from Puppet, but are less expected to...
-log_dir=${log_dir-'/var/log/haproxy_status'}
 state_dir=${state_dir-"${base_dir}/run"}
 workers=${workers-1}
 worker_class=${worker_class-sync}
@@ -19,7 +18,7 @@ worker_timeout=${worker_timeout-30}
 runas_user=${runas_user-'root'}
 runas_group=${runas_group-'root'}
 
-chown -R ${runas_user}:${runas_group} "${log_dir}" "${state_dir}" || true
+chown -R ${runas_user}:${runas_group} "${state_dir}" || true
 test -d /backends && chown -R ${runas_user}:${runas_group} /backends || true
 
 # set PYTHONPATH if it is not already set using Docker environment
@@ -45,6 +44,5 @@ exec start-stop-daemon --start -c ${runas_user}:${runas_group} --exec \
      --bind 0.0.0.0:8080 \
      --workers ${workers} --worker-class ${worker_class} \
      --threads ${worker_threads} --timeout ${worker_timeout} \
-     --error-logfile "${log_dir}/${haproxy_status_name}-error.log" \
      --capture-output \
      ${extra_args} haproxy_status.run:app
