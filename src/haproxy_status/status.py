@@ -170,6 +170,7 @@ def get_status(stats_url: str, logger: logging.Logger) -> Optional[List[Site]]:
     :param stats_url: Path to haproxy socket, or a HTTP(S) URL to fetch from.
     """
     data = haproxy_execute('show stat', stats_url, logger)
+    logger.debug(f'haproxy show stat result: {data}')
     if not data:
         return None
     if not data.startswith('# '):
@@ -186,7 +187,14 @@ def get_status(stats_url: str, logger: logging.Logger) -> Optional[List[Site]]:
         return None
     # The first line is the legend, e.g.
     # # pxname,svname,qcur,qmax,scur,smax,slim,stot,bin,bout,dreq,...,status,...
-    fields = [(field_name, str,) for field_name in lines[0][2:].split(',')]
+    fields = []
+    unknown_index = 0
+    for field_name in lines[0][2:].split(','):
+        if field_name == '-':
+            # haproxy 2.4 suddenly has a field named '-' which isn't accepted by NamedTuple
+            field_name = f'unknown{unknown_index}'
+            unknown_index += 1
+        fields += [(field_name, str,)]
     # Create a NamedTuple dynamically based on the legend we got from haproxy.
     # Unfortunately, this is not accepted by mypy, so the result is casted to SiteInfo
     # to not end up with countless type ignores.
