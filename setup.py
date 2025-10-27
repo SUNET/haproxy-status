@@ -18,7 +18,7 @@ def load_requirements(path: PurePath) -> List[str]:
             res += [line]
     return res
 
-version = '0.0.4'
+version = '0.0.5'
 
 here = PurePath(__file__)
 
