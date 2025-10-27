@@ -1,0 +1,5 @@
+# pyyaml is broken with cython 3
+# https://github.com/yaml/pyyaml/issues/724
+pyyaml!=6.0.0
+pyyaml!=5.4.0
+pyyaml!=5.4.1
