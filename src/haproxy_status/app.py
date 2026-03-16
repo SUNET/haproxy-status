@@ -70,7 +70,7 @@ class MyState(object):
         return False
 
     def get_status(self):
-        age = 0
+        age: float = 0
         if self._update_time is not None:
             age = time.time() - self._update_time
         res = {
@@ -110,7 +110,7 @@ class MyState(object):
             res["status"] = "STATUS_ADMIN_DOWN"
 
         if res["status"] != self._last_status:
-            self._last_status = res["status"]
+            self._last_status = str(res["status"])
             self.logger.info(
                 "Status changed to {} {}".format(res["status"], res["reason"])
             )
@@ -212,7 +212,7 @@ def init_app(name, config=None):
     :rtype: flask.Flask
     """
     app = Flask(name)
-    app.wsgi_app = ProxyFix(app.wsgi_app)
+    app.wsgi_app = ProxyFix(app.wsgi_app)  # type: ignore[method-assign]
 
     # Load configuration
     app.config.from_object("haproxy_status.settings.common")
@@ -238,11 +238,11 @@ def init_app(name, config=None):
         handler.setFormatter(CustomFormatter(fmt=custom_format))
     app.logger.setLevel(app.config["LOG_LEVEL"])
 
-    app.mystate = MyState(app.config, app.logger)
+    app.mystate = MyState(app.config, app.logger)  # type: ignore[attr-defined]
 
     # Get status to trigger writing the STATUS_OUTPUT_FILENAME file
     # TODO: might need an internal mechanism to trigger status updating if nobody accesses the status endpoint
-    _status = app.mystate.get_status()
+    _status = app.mystate.get_status()  # type: ignore[attr-defined]
 
     app.logger.info(f"Application {name} initialised with initial status: {_status}")
     return app

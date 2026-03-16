@@ -57,9 +57,9 @@ class Site(object):
         :param parsed: ParsedLine
         :type parsed: namedtuple
         """
-        if parsed.svname == "FRONTEND":  # type: ignore
+        if parsed.svname == "FRONTEND":
             self._raw_fe += [parsed]
-        elif parsed.svname == "BACKEND":  # type: ignore
+        elif parsed.svname == "BACKEND":
             self._raw_be += [parsed]
         else:
             self._raw_servers += [parsed]
@@ -242,7 +242,7 @@ def get_status(stats_url: str, logger: logging.Logger) -> Optional[List[Site]]:
     res: Dict[str, Site] = {}
     for values in csv.reader(lines[1:]):
         try:
-            _this = ParsedLine(*values)  # type: ignore
+            _this = ParsedLine(*values)
             info = cast(SiteInfo, _this)
         except Exception as exc:
             logger.warning("Bad CSV data: {!r}: {!s}".format(values, exc))

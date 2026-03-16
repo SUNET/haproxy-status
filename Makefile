@@ -2,6 +2,8 @@ SOURCE=		src
 UV=$(shell which uv)
 PIPCOMPILE=$(UV) pip compile --upgrade --generate-hashes --no-strip-extras --index-url https://pypi.sunet.se/simple --emit-index-url
 PIPSYNC=$(UV) pip sync --index-url https://pypi.sunet.se/simple
+MYPY_ARGS=  --install-types --non-interactive --pretty --ignore-missing-imports \
+            --warn-unused-ignores
 
 reformat:
 	# sort imports and remove unused imports
@@ -13,11 +15,7 @@ test:
 	PYTHONPATH=$(SOURCE) pytest -vvv -ra --log-cli-level DEBUG
 
 typecheck:
-	@echo "Type checking this project currently does not work:"
-	@echo ""
-	@echo "  AssertionError: Cannot find component 'namedtuple@195' for 'haproxy_status.status.namedtuple@195'"
-	@echo ""
-	#mypy --ignore-missing-imports $(SOURCE)
+	MYPYPATH=$(SOURCE) mypy $(MYPY_ARGS) --check-untyped-defs
 
 %ments.txt: %ments.in
 	CUSTOM_COMPILE_COMMAND="make update_deps" $(PIPCOMPILE) $< -o $@
