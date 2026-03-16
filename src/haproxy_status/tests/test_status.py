@@ -44,12 +44,12 @@ from werkzeug.exceptions import NotFound
 import haproxy_status
 
 TEST_CONFIG = {
-    'DEBUG': True,
-    'TESTING': True,
-    'PROPAGATE_EXCEPTIONS': True,
-    'PRESERVE_CONTEXT_ON_EXCEPTION': True,
-    'TRAP_HTTP_EXCEPTIONS': True,
-    'TRAP_BAD_REQUEST_ERRORS': True,
+    "DEBUG": True,
+    "TESTING": True,
+    "PROPAGATE_EXCEPTIONS": True,
+    "PRESERVE_CONTEXT_ON_EXCEPTION": True,
+    "TRAP_HTTP_EXCEPTIONS": True,
+    "TRAP_BAD_REQUEST_ERRORS": True,
 }
 
 
@@ -58,7 +58,7 @@ class AppTests(unittest.TestCase):
 
     def setUp(self, config=TEST_CONFIG):
         super(AppTests, self).setUp()
-        self.app = haproxy_status.app.init_app('unittest_app', config)
+        self.app = haproxy_status.app.init_app("unittest_app", config)
         self.client = self.app.test_client()
 
 
@@ -68,4 +68,4 @@ class BaseAppTests(AppTests):
         Verify bad requests are rejected
         """
         with self.assertRaises(NotFound):
-            self.client.get('/nosuchendpoint')
+            self.client.get("/nosuchendpoint")

@@ -41,12 +41,12 @@ import sys
 
 import haproxy_status
 
-progname = 'haproxy_status'
+progname = "haproxy_status"
 app = haproxy_status.app.init_app(progname)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
-        app.logger.info('Starting {} app...'.format(progname))
+        app.logger.info("Starting {} app...".format(progname))
         app.run()
     except KeyboardInterrupt:
         sys.exit(0)

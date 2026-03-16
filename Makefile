@@ -2,8 +2,8 @@ SOURCE=		src
 PIPCOMPILE=	pip-compile -v --generate-hashes --extra-index-url https://pypi.sunet.se/simple
 
 reformat:
-	black --line-length 120 --target-version py37 --skip-string-normalization $(SOURCE)
 	isort --line-width 120 --atomic --project haproxy_status $(SOURCE)
+	black --line-length 120 --target-version py37 $(SOURCE)
 
 test:
 	PYTHONPATH=$(SOURCE) pytest
