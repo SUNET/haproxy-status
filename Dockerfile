@@ -1,4 +1,4 @@
-FROM docker.sunet.se/eduid/python3env
+FROM debian:stable
 
 MAINTAINER eduid-dev <eduid-dev@SEGATE.SUNET.SE>
 
