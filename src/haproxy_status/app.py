@@ -85,6 +85,18 @@ class MyState(object):
             if "BACKEND" not in data:
                 continue
             count += 1
+
+            # Check if any server in this backend is flapping
+            flapping_servers = [
+                srv_name
+                for srv_name, srv_data in data.items()
+                if srv_name != "BACKEND" and self._is_server_flapping(this, srv_name)
+            ]
+            if flapping_servers:
+                down_count += 1
+                msg += ["{} is FLAPPING ({})".format(this, ", ".join(flapping_servers))]
+                continue
+
             be = data["BACKEND"]
             status = be["status"]
             if status == "UP":
@@ -124,6 +136,25 @@ class MyState(object):
             return True
         return False
 
+    def _is_server_flapping(self, name: str, srv_name: str) -> bool:
+        """
+        Check if a server is flapping based on recorded state transitions.
+
+        :param name: Site name
+        :param srv_name: Server name
+        :return: True if the server has flapped more than FLAPPING_THRESHOLD times
+                 within FLAPPING_WINDOW seconds
+        """
+        srv_data = self._hap_status.get(name, {}).get(srv_name, {})
+        transitions = srv_data.get("transitions", [])
+        if not transitions:
+            return False
+        window = self.config["FLAPPING_WINDOW"]
+        threshold = self.config["FLAPPING_THRESHOLD"]
+        cutoff = int(time.time()) - window
+        recent = [ts for ts in transitions if ts >= cutoff]
+        return len(recent) >= threshold
+
     def _register_server_state(self, name: str, server: SiteInfo) -> None:
         """
         :param name: Site name
@@ -135,30 +166,126 @@ class MyState(object):
             self._hap_status[name] = {}
         if srv_name not in self._hap_status[name]:
             self._hap_status[name][srv_name] = {}
-        old_status = self._hap_status[name][srv_name].get("status")
+        srv_data = self._hap_status[name][srv_name]
+        old_status = srv_data.get("status")
+
+        # Detect state transitions that happened between polls using HAProxy's
+        # chkdown counter (cumulative UP->DOWN transitions) and lastchg
+        # (seconds since last status change).
+        now = int(time.time())
+        if srv_name != "BACKEND":
+            self._detect_flapping(name, srv_name, server, now)
+
         if old_status != srv_status:
             if srv_name != "BACKEND":
                 if old_status is None:
-                    self.logger.info("Backend {} server {} initial status is {}".format(name, srv_name, srv_status))
+                    self.logger.info(
+                        "Backend {} server {} initial status is {}".format(
+                            name, srv_name, srv_status
+                        )
+                    )
                 else:
-                    self.logger.info("Backend {} server {} changed status to {}".format(name, srv_name, srv_status))
+                    self.logger.info(
+                        "Backend {} server {} changed status to {}".format(
+                            name, srv_name, srv_status
+                        )
+                    )
                 # Debug log all the info we got on server changes. We once saw haproxy end up with
                 # the wrong IP for a backend and had no way to know when or how it changed.
                 self.logger.debug("All server data: {}".format(server))
                 if srv_status == "DOWN":
-                    self._hap_status[name][srv_name]["next_log_down"] = (
-                        int(time.time()) + self.config["LOG_DOWN_INTERVAL"]
-                    )
-            self._hap_status[name][srv_name]["status"] = srv_status
-            self._hap_status[name][srv_name]["change_ts"] = int(time.time()) - int(server.lastchg)
+                    srv_data["next_log_down"] = now + self.config["LOG_DOWN_INTERVAL"]
+            srv_data["status"] = srv_status
+            srv_data["change_ts"] = now - int(server.lastchg)
         else:
             if (
                 srv_name != "BACKEND"
                 and srv_status == "DOWN"
-                and int(time.time()) >= self._hap_status[name][srv_name]["next_log_down"]
+                and now >= srv_data.get("next_log_down", 0)
             ):
-                downtime = time_to_str(int(time.time() - self._hap_status[name][srv_name]["change_ts"]))
-                self.logger.info("Site {} server {} is still DOWN ({})".format(name, srv_name, downtime))
+                downtime = time_to_str(int(time.time() - srv_data["change_ts"]))
+                self.logger.info(
+                    "Site {} server {} is still DOWN ({})".format(
+                        name, srv_name, downtime
+                    )
+                )
+
+        # Always update lastchg and chkdown for next poll comparison
+        srv_data["lastchg"] = int(server.lastchg) if server.lastchg else 0
+        try:
+            srv_data["chkdown"] = int(server.chkdown) if server.chkdown else 0
+        except (ValueError, AttributeError):
+            pass
+
+    def _detect_flapping(
+        self, name: str, srv_name: str, server: SiteInfo, now: int
+    ) -> None:
+        """
+        Detect server flapping using two signals from HAProxy's CSV stats:
+
+        1. chkdown delta: HAProxy's cumulative UP->DOWN transition counter.
+           If it increased since last poll, transitions happened (even if
+           the server is currently UP again).
+
+        2. lastchg regression: lastchg is seconds since last status change.
+           For a stable server, it should grow by roughly the poll interval
+           between polls. If it gets smaller, a status change occurred
+           between polls that we didn't directly observe.
+
+        Detected transitions are recorded with timestamps and pruned to
+        stay within FLAPPING_WINDOW.
+        """
+        srv_data = self._hap_status[name][srv_name]
+
+        if "transitions" not in srv_data:
+            srv_data["transitions"] = []
+
+        transitions_detected = 0
+
+        # Signal 1: chkdown counter increased
+        try:
+            new_chkdown = int(server.chkdown) if server.chkdown else 0
+        except (ValueError, AttributeError):
+            new_chkdown = 0
+        old_chkdown = srv_data.get("chkdown", 0)
+        if old_chkdown is not None and new_chkdown > old_chkdown:
+            delta = new_chkdown - old_chkdown
+            transitions_detected = max(transitions_detected, delta)
+            self.logger.warning(
+                "Backend {} server {} chkdown increased by {} ({}->{}), server may be flapping".format(
+                    name, srv_name, delta, old_chkdown, new_chkdown
+                )
+            )
+
+        # Signal 2: lastchg regression (got smaller since last poll)
+        new_lastchg = int(server.lastchg) if server.lastchg else 0
+        old_lastchg = srv_data.get("lastchg")
+        if old_lastchg is not None and new_lastchg < old_lastchg:
+            # lastchg got smaller -- a status change happened between polls.
+            # Only count this if chkdown didn't already detect it (avoid double-counting).
+            if transitions_detected == 0:
+                transitions_detected = 1
+                self.logger.warning(
+                    "Backend {} server {} lastchg regressed ({}->{}s), status change detected between polls".format(
+                        name, srv_name, old_lastchg, new_lastchg
+                    )
+                )
+
+        # Record detected transitions
+        for _ in range(transitions_detected):
+            srv_data["transitions"].append(now)
+
+        # Prune old transitions outside the window
+        window = self.config["FLAPPING_WINDOW"]
+        cutoff = now - window
+        srv_data["transitions"] = [ts for ts in srv_data["transitions"] if ts >= cutoff]
+
+        if self._is_server_flapping(name, srv_name):
+            self.logger.warning(
+                "Backend {} server {} is FLAPPING ({} transitions in {}s window)".format(
+                    name, srv_name, len(srv_data["transitions"]), window
+                )
+            )
 
 
 # from http://stackoverflow.com/questions/27775026/provide-extra-information-to-flasks-app-logger
