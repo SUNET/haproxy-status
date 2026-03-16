@@ -10,7 +10,7 @@ reformat:
 	ruff format
 
 test:
-	PYTHONPATH=$(SOURCE) pytest
+	PYTHONPATH=$(SOURCE) pytest -vvv -ra --log-cli-level DEBUG
 
 typecheck:
 	@echo "Type checking this project currently does not work:"
