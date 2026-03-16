@@ -22,7 +22,10 @@ def status():
     res = current_app.mystate.get_status()
     current_app.logger.debug("Response: {}".format(res))
 
-    if res["status"] == "STATUS_ADMIN_DOWN" and current_app.config["RETURN_404_ON_ADMIN_DOWN"]:
+    if (
+        res["status"] == "STATUS_ADMIN_DOWN"
+        and current_app.config["RETURN_404_ON_ADMIN_DOWN"]
+    ):
         abort(404)
 
     return jsonify(res)

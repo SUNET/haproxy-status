@@ -99,7 +99,9 @@ class MyState(object):
         plural = "" if count == 1 else "s"
         if down_count:
             res["status"] = "STATUS_DOWN"
-            res["reason"] = "{}/{} backend{} not UP: {}".format(down_count, count, plural, ", ".join(msg))
+            res["reason"] = "{}/{} backend{} not UP: {}".format(
+                down_count, count, plural, ", ".join(msg)
+            )
         elif count:
             res["status"] = "STATUS_UP"
             res["reason"] = "{} backend{} UP".format(count, plural)
@@ -109,7 +111,9 @@ class MyState(object):
 
         if res["status"] != self._last_status:
             self._last_status = res["status"]
-            self.logger.info("Status changed to {} {}".format(res["status"], res["reason"]))
+            self.logger.info(
+                "Status changed to {} {}".format(res["status"], res["reason"])
+            )
             if self.config["STATUS_OUTPUT_FILENAME"]:
                 # export to docker health check
                 with open(self.config["STATUS_OUTPUT_FILENAME"], "w") as fd:
@@ -120,7 +124,11 @@ class MyState(object):
     def should_fetch_hap_status(self) -> bool:
         if time.time() >= self._next_fetch_hap_status:
             # move the next-fetch timestamp forward in time, and add a tiny bit of fuzzing
-            self._next_fetch_hap_status = time.time() + self.config["FETCH_HAPROXY_STATUS_INTERVAL"] + random.random()
+            self._next_fetch_hap_status = (
+                time.time()
+                + self.config["FETCH_HAPROXY_STATUS_INTERVAL"]
+                + random.random()
+            )
             return True
         return False
 
@@ -139,9 +147,17 @@ class MyState(object):
         if old_status != srv_status:
             if srv_name != "BACKEND":
                 if old_status is None:
-                    self.logger.info("Backend {} server {} initial status is {}".format(name, srv_name, srv_status))
+                    self.logger.info(
+                        "Backend {} server {} initial status is {}".format(
+                            name, srv_name, srv_status
+                        )
+                    )
                 else:
-                    self.logger.info("Backend {} server {} changed status to {}".format(name, srv_name, srv_status))
+                    self.logger.info(
+                        "Backend {} server {} changed status to {}".format(
+                            name, srv_name, srv_status
+                        )
+                    )
                 # Debug log all the info we got on server changes. We once saw haproxy end up with
                 # the wrong IP for a backend and had no way to know when or how it changed.
                 self.logger.debug("All server data: {}".format(server))
@@ -150,15 +166,24 @@ class MyState(object):
                         int(time.time()) + self.config["LOG_DOWN_INTERVAL"]
                     )
             self._hap_status[name][srv_name]["status"] = srv_status
-            self._hap_status[name][srv_name]["change_ts"] = int(time.time()) - int(server.lastchg)
+            self._hap_status[name][srv_name]["change_ts"] = int(time.time()) - int(
+                server.lastchg
+            )
         else:
             if (
                 srv_name != "BACKEND"
                 and srv_status == "DOWN"
-                and int(time.time()) >= self._hap_status[name][srv_name]["next_log_down"]
+                and int(time.time())
+                >= self._hap_status[name][srv_name]["next_log_down"]
             ):
-                downtime = time_to_str(int(time.time() - self._hap_status[name][srv_name]["change_ts"]))
-                self.logger.info("Site {} server {} is still DOWN ({})".format(name, srv_name, downtime))
+                downtime = time_to_str(
+                    int(time.time() - self._hap_status[name][srv_name]["change_ts"])
+                )
+                self.logger.info(
+                    "Site {} server {} is still DOWN ({})".format(
+                        name, srv_name, downtime
+                    )
+                )
 
 
 # from http://stackoverflow.com/questions/27775026/provide-extra-information-to-flasks-app-logger

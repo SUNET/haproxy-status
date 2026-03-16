@@ -2,8 +2,10 @@ SOURCE=		src
 PIPCOMPILE=	pip-compile -v --generate-hashes --extra-index-url https://pypi.sunet.se/simple
 
 reformat:
-	isort --line-width 120 --atomic --project haproxy_status $(SOURCE)
-	black --line-length 120 --target-version py37 $(SOURCE)
+	# sort imports and remove unused imports
+	ruff check --select F401,I --fix
+	# reformat
+	ruff format
 
 test:
 	PYTHONPATH=$(SOURCE) pytest
