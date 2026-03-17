@@ -10,6 +10,7 @@ from unittest.mock import patch
 from haproxy_status.config import Settings
 
 
+@patch.dict(os.environ, {}, clear=True)
 class SettingsDefaultsTests(unittest.TestCase):
     """Test that Settings has the correct default values matching settings/common.py."""
 
@@ -58,6 +59,7 @@ class SettingsDefaultsTests(unittest.TestCase):
         self.assertEqual(settings.flapping_window, 300)
 
 
+@patch.dict(os.environ, {}, clear=True)
 class SettingsEnvVarOverrideTests(unittest.TestCase):
     """Test that settings can be overridden via environment variables."""
 
@@ -96,6 +98,7 @@ class SettingsEnvVarOverrideTests(unittest.TestCase):
             self.assertEqual(settings.fetch_haproxy_status_interval, 30)
 
 
+@patch.dict(os.environ, {}, clear=True)
 class SettingsComputedHealthyBackendUptimeTests(unittest.TestCase):
     """Test that healthy_backend_uptime is computed from fetch_haproxy_status_interval."""
 
@@ -126,6 +129,7 @@ class SettingsComputedHealthyBackendUptimeTests(unittest.TestCase):
             self.assertEqual(settings.healthy_backend_uptime, 50)
 
 
+@patch.dict(os.environ, {}, clear=True)
 class DeprecatedEnvVarTests(unittest.TestCase):
     """Test that haproxy_status_SETTINGS env var triggers a deprecation warning."""
 
@@ -147,21 +151,18 @@ class DeprecatedEnvVarTests(unittest.TestCase):
 
     def test_no_warning_without_deprecated_env_var(self):
         """No DeprecationWarning when haproxy_status_SETTINGS is not set."""
-        # Ensure the env var is NOT set
-        env = os.environ.copy()
-        env.pop("haproxy_status_SETTINGS", None)
-        with patch.dict(os.environ, env, clear=True):
-            import haproxy_status
+        import haproxy_status
 
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                app = haproxy_status.app.init_app("test_no_deprecation")
-                deprecation_warnings = [
-                    x for x in w if issubclass(x.category, DeprecationWarning)
-                ]
-                self.assertEqual(len(deprecation_warnings), 0)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            app = haproxy_status.app.init_app("test_no_deprecation")
+            deprecation_warnings = [
+                x for x in w if issubclass(x.category, DeprecationWarning)
+            ]
+            self.assertEqual(len(deprecation_warnings), 0)
 
 
+@patch.dict(os.environ, {}, clear=True)
 class FlaskConfigIntegrationTests(unittest.TestCase):
     """Test that Settings are properly wired into Flask app.config."""
 
