@@ -10,3 +10,7 @@ STATUS_OUTPUT_FILENAME = "/dev/shm/haproxy-status.txt"
 SIGNAL_DIRECTORY = "/var/haproxy-status"
 SERVICE_NAME = None
 RETURN_404_ON_ADMIN_DOWN = True
+# Flapping detection: flag a server as FLAPPING if it transitions DOWN
+# more than FLAPPING_THRESHOLD times within FLAPPING_WINDOW seconds
+FLAPPING_THRESHOLD = 3
+FLAPPING_WINDOW = 300
