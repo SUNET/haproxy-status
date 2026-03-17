@@ -49,6 +49,14 @@ class SettingsDefaultsTests(unittest.TestCase):
         settings = Settings()
         self.assertTrue(settings.return_404_on_admin_down)
 
+    def test_flapping_threshold_default(self):
+        settings = Settings()
+        self.assertEqual(settings.flapping_threshold, 3)
+
+    def test_flapping_window_default(self):
+        settings = Settings()
+        self.assertEqual(settings.flapping_window, 300)
+
 
 class SettingsEnvVarOverrideTests(unittest.TestCase):
     """Test that settings can be overridden via environment variables."""
@@ -169,6 +177,8 @@ class FlaskConfigIntegrationTests(unittest.TestCase):
         self.assertEqual(app.config["HEALTHY_BACKEND_UPTIME"], 32)
         self.assertIsNone(app.config["SERVICE_NAME"])
         self.assertTrue(app.config["RETURN_404_ON_ADMIN_DOWN"])
+        self.assertEqual(app.config["FLAPPING_THRESHOLD"], 3)
+        self.assertEqual(app.config["FLAPPING_WINDOW"], 300)
 
     def test_flask_config_reflects_env_overrides(self):
         """Flask app.config should reflect env var overrides via Settings."""
