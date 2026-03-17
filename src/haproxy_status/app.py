@@ -338,6 +338,9 @@ def init_app(name, config=None):
             DeprecationWarning,
             stacklevel=2,
         )
+        # Backwards compatibility: still load the config file referenced by
+        # haproxy_status_SETTINGS while it is deprecated.
+        app.config.from_envvar("haproxy_status_SETTINGS", silent=True)
 
     # Load optional init time settings
     if config is not None:
