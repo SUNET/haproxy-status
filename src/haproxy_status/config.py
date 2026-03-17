@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     signal_directory: str = "/var/haproxy-status"
     service_name: Optional[str] = None
     return_404_on_admin_down: bool = True
+    # Flapping detection: flag a server as FLAPPING if it transitions DOWN
+    # more than FLAPPING_THRESHOLD times within FLAPPING_WINDOW seconds
+    flapping_threshold: int = 3
+    flapping_window: int = 300
 
     def model_post_init(self, __context) -> None:
         if self.healthy_backend_uptime is None:
