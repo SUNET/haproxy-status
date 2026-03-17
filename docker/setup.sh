@@ -8,7 +8,7 @@ set -x
 
 apt-get update
 apt-get -y dist-upgrade
-apt-get -y install socat
+apt-get -y install socat curl python3-venv
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
@@ -18,6 +18,8 @@ ping -c 1 -q pypiserver.docker && PYPI="http://pypiserver.docker:8080/simple/"
 echo "#############################################################"
 echo "$0: Using PyPi URL ${PYPI}"
 echo "#############################################################"
+
+python3 -m venv /opt/eduid/
 
 /opt/eduid/bin/pip install -i ${PYPI} gunicorn
 

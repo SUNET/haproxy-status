@@ -4,5 +4,6 @@ __organization__ = "SUNET"
 __license__ = "BSD"
 __authors__ = ["Fredrik Thulin"]
 
-import haproxy_status.app
-import haproxy_status.status
+from haproxy_status import app, status
+
+__all__ = ["app", "status"]

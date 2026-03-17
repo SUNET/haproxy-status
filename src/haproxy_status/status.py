@@ -61,9 +61,9 @@ class Site(object):
         :param parsed: ParsedLine
         :type parsed: namedtuple
         """
-        if parsed.svname == "FRONTEND":  # type: ignore
+        if parsed.svname == "FRONTEND":
             self._raw_fe += [parsed]
-        elif parsed.svname == "BACKEND":  # type: ignore
+        elif parsed.svname == "BACKEND":
             self._raw_be += [parsed]
         else:
             self._raw_servers += [parsed]
@@ -119,22 +119,34 @@ def haproxy_execute(cmd: str, stats_url: str, logger: logging.Logger) -> Optiona
         try:
             data = requests.get(stats_url).text
         except requests.exceptions.ConnectionError as exc:
-            raise HAProxyStatusError("Failed fetching status from {}: {}".format(stats_url, exc))
+            raise HAProxyStatusError(
+                "Failed fetching status from {}: {}".format(stats_url, exc)
+            )
     else:
         socket_fn = stats_url
         if socket_fn.startswith("file://"):
             socket_fn = socket_fn[len("file://") :]
-        logger.debug('opening AF_UNIX socket {} for command "{}"'.format(socket_fn, cmd))
+        logger.debug(
+            'opening AF_UNIX socket {} for command "{}"'.format(socket_fn, cmd)
+        )
         try:
             client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             client.connect(socket_fn)
             cmd = cmd + "\n"
             client.send(cmd.encode("utf-8"))
         except ConnectionRefusedError:
-            logger.info("haproxy refused the connection on socket {}, maybe it is not running?".format(socket_fn))
+            logger.info(
+                "haproxy refused the connection on socket {}, maybe it is not running?".format(
+                    socket_fn
+                )
+            )
             return None
         except Exception as exc:
-            logger.error("Failed sending command {!r} to socket {}: {}".format(cmd, socket_fn, exc))
+            logger.error(
+                "Failed sending command {!r} to socket {}: {}".format(
+                    cmd, socket_fn, exc
+                )
+            )
             logger.exception(exc)
             return None
 
@@ -187,7 +199,9 @@ def get_status(stats_url: str, logger: logging.Logger) -> Optional[List[Site]]:
                 this = this[:-1]
             lines += [this]
     if len(lines) < 2:
-        logger.warning("haproxy did not return status for any backends: {}".format(data))
+        logger.warning(
+            "haproxy did not return status for any backends: {}".format(data)
+        )
         return None
     # The first line is the legend, e.g.
     # # pxname,svname,qcur,qmax,scur,smax,slim,stot,bin,bout,dreq,...,status,...
@@ -232,7 +246,7 @@ def get_status(stats_url: str, logger: logging.Logger) -> Optional[List[Site]]:
     res: Dict[str, Site] = {}
     for values in csv.reader(lines[1:]):
         try:
-            _this = ParsedLine(*values)  # type: ignore
+            _this = ParsedLine(*values)
             info = cast(SiteInfo, _this)
         except Exception as exc:
             logger.warning("Bad CSV data: {!r}: {!s}".format(values, exc))
