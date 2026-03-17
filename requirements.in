@@ -3,3 +3,4 @@ flask
 simplejson
 PyYAML
 importlib-metadata  # sub-requirement of flask
+pydantic-settings

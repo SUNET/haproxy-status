@@ -3,12 +3,14 @@ import logging
 import os
 import random
 import time
+import warnings
 from typing import Any, Dict, List, Mapping, Optional
 
 import yaml
 from flask import Flask, has_request_context, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from haproxy_status.config import Settings
 from haproxy_status.status import Site, SiteInfo
 from haproxy_status.util import time_to_str
 
@@ -214,18 +216,22 @@ def init_app(name, config=None):
     app = Flask(name)
     app.wsgi_app = ProxyFix(app.wsgi_app)  # type: ignore[method-assign]
 
-    # Load configuration
-    app.config.from_object("haproxy_status.settings.common")
-    app.config.from_envvar("haproxy_status_SETTINGS", silent=True)
+    # Load configuration from pydantic-settings (reads env vars automatically)
+    settings = Settings()
+    app.config.from_mapping({k.upper(): v for k, v in settings.model_dump().items()})
+
+    # Warn about deprecated haproxy_status_SETTINGS env var
+    if "haproxy_status_SETTINGS" in os.environ:
+        warnings.warn(
+            "The 'haproxy_status_SETTINGS' environment variable is deprecated. "
+            "Use individual environment variables (e.g. STATS_URL, LOG_LEVEL) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     # Load optional init time settings
     if config is not None:
         app.config.update(config)
-
-    # load SERVICE_NAME from environment variable 'haproxy_status_name' to
-    # make it easy to set it from docker compose files.
-    if "SERVICE_NAME" in os.environ:
-        app.config.update({"SERVICE_NAME": os.environ["SERVICE_NAME"]})
 
     # Register views. Import here to avoid a Flask circular dependency.
     from haproxy_status.views import haproxy_status_views
