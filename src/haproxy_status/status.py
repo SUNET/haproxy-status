@@ -29,6 +29,10 @@ class SiteInfo(object):
     addr: str
     check_desc: str
     last_chk: str
+    # fields used for flapping detection
+    chkfail: str
+    chkdown: str
+    downtime: str
 
 
 class Site(object):
