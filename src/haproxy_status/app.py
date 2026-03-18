@@ -332,12 +332,16 @@ def init_app(name, config=None):
 
     # Warn about deprecated haproxy_status_SETTINGS env var
     if "haproxy_status_SETTINGS" in os.environ:
-        warnings.warn(
+        message = (
             "The 'haproxy_status_SETTINGS' environment variable is deprecated. "
-            "Use individual environment variables (e.g. STATS_URL, LOG_LEVEL) instead.",
-            DeprecationWarning,
+            "Use individual environment variables (e.g. STATS_URL, LOG_LEVEL) instead."
+        )
+        warnings.warn(
+            message,
+            FutureWarning,
             stacklevel=2,
         )
+        app.logger.warning(message)
         # Backwards compatibility: still load the config file referenced by
         # haproxy_status_SETTINGS while it is deprecated.
         app.config.from_envvar("haproxy_status_SETTINGS", silent=True)
