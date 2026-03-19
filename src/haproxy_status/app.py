@@ -338,7 +338,7 @@ def init_app(name, config=None):
         )
         warnings.warn(
             message,
-            FutureWarning,
+            DeprecationWarning,
             stacklevel=2,
         )
         app.logger.warning(message)
