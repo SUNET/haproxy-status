@@ -19,7 +19,7 @@ def load_requirements(path: PurePath) -> List[str]:
     return res
 
 
-version = "0.0.5"
+version = "0.1.0"
 
 here = PurePath(__file__)
 
